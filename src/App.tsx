@@ -30,11 +30,25 @@ const MainApp: React.FC = () => {
   const { isAuthenticated, isAuthChecking, role, currentUser, logout } = useAuth();
   const { showToast } = useToast();
 
-  // Route state initialized from window.location.pathname
-  const [currentPath, setCurrentPath] = useState<string>(() => {
-    const p = window.location.pathname;
+  const getRepoPrefix = (): string => {
+    return window.location.pathname.startsWith('/StudentComplaintManagement')
+      ? '/StudentComplaintManagement'
+      : '';
+  };
+
+  const getCleanPath = (): string => {
+    let p = window.location.pathname;
+    const prefix = window.location.pathname.startsWith('/StudentComplaintManagement')
+      ? '/StudentComplaintManagement'
+      : '';
+    if (prefix && p.startsWith(prefix)) {
+      p = p.substring(prefix.length);
+    }
     return p && p !== '/' ? p : '/login';
-  });
+  };
+
+  // Route state initialized from window.location.pathname
+  const [currentPath, setCurrentPath] = useState<string>(getCleanPath);
 
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
@@ -46,8 +60,7 @@ const MainApp: React.FC = () => {
   // Listen to browser Back/Forward navigation
   useEffect(() => {
     const handlePopState = () => {
-      const p = window.location.pathname;
-      setCurrentPath(p && p !== '/' ? p : '/login');
+      setCurrentPath(getCleanPath());
     };
     window.addEventListener('popstate', handlePopState);
     return () => window.removeEventListener('popstate', handlePopState);
@@ -55,8 +68,10 @@ const MainApp: React.FC = () => {
 
   // Navigation helper that pushes browser history
   const navigateTo = (path: string) => {
-    if (window.location.pathname !== path) {
-      window.history.pushState({}, '', path);
+    const prefix = getRepoPrefix();
+    const fullPath = prefix + path;
+    if (window.location.pathname !== fullPath) {
+      window.history.pushState({}, '', fullPath);
     }
     setCurrentPath(path);
   };
