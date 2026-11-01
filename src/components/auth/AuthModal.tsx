@@ -39,6 +39,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   // Sign In state
   const [signInEmail, setSignInEmail] = useState('');
   const [signInPassword, setSignInPassword] = useState('');
+  const [signInRole, setSignInRole] = useState<UserRole>('student');
   const [showSignInPassword, setShowSignInPassword] = useState(false);
 
   // Sign Up state
@@ -67,7 +68,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     setIsLoading(true);
 
     try {
-      const result = await login(signInEmail, signInPassword);
+      const result = await login(signInEmail, signInPassword, signInRole);
       if (result.success) {
         showToast('success', 'Welcome back!', `Signed in successfully.`);
         onClose();
@@ -133,7 +134,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
   const quickFillDemo = (acc: (typeof demoAccounts)[0]) => {
     setSignInEmail(acc.email);
-    setSignInPassword('password123');
+    setSignInRole(acc.role);
+    setSignInPassword(acc.password || 'password123');
     setErrorMessage(null);
   };
 
@@ -211,6 +213,22 @@ export const AuthModal: React.FC<AuthModalProps> = ({
           {/* TAB 1: SIGN IN */}
           {tab === 'signin' && (
             <form onSubmit={handleSignIn} className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                  Select Your Role *
+                </label>
+                <select
+                  value={signInRole}
+                  onChange={(e) => setSignInRole(e.target.value as UserRole)}
+                  className="w-full px-3.5 py-2.5 rounded-xl text-xs sm:text-sm border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-blue-500 transition-all font-semibold"
+                >
+                  <option value="student">🎓 Student</option>
+                  <option value="professor">👨‍🏫 Professor</option>
+                  <option value="staff">🛠️ Staff</option>
+                  <option value="hod">🏛️ HOD (Head of Department)</option>
+                </select>
+              </div>
+
               <div>
                 <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
                   Institutional Email

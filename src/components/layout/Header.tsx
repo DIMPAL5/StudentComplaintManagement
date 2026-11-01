@@ -98,9 +98,11 @@ export const Header: React.FC<HeaderProps> = ({
 
   const roleMeta: Record<UserRole, { label: string; icon: React.ReactNode; color: string }> = {
     student: { label: 'Student', icon: <GraduationCap className="w-4 h-4" />, color: 'text-blue-500 bg-blue-50 dark:bg-blue-950/60' },
-    faculty: { label: 'Faculty', icon: <Briefcase className="w-4 h-4" />, color: 'text-purple-500 bg-purple-50 dark:bg-purple-950/60' },
+    professor: { label: 'Professor', icon: <Briefcase className="w-4 h-4" />, color: 'text-indigo-500 bg-indigo-50 dark:bg-indigo-950/60' },
+    faculty: { label: 'Professor', icon: <Briefcase className="w-4 h-4" />, color: 'text-indigo-500 bg-indigo-50 dark:bg-indigo-950/60' },
     staff: { label: 'Maintenance Staff', icon: <Wrench className="w-4 h-4" />, color: 'text-amber-500 bg-amber-50 dark:bg-amber-950/60' },
-    department_head: { label: 'Dept Head (HOD)', icon: <Building2 className="w-4 h-4" />, color: 'text-teal-500 bg-teal-50 dark:bg-teal-950/60' },
+    hod: { label: 'Dept Head (HOD)', icon: <Building2 className="w-4 h-4" />, color: 'text-purple-500 bg-purple-50 dark:bg-purple-950/60' },
+    department_head: { label: 'Dept Head (HOD)', icon: <Building2 className="w-4 h-4" />, color: 'text-purple-500 bg-purple-50 dark:bg-purple-950/60' },
     admin: { label: 'Administrator', icon: <Shield className="w-4 h-4" />, color: 'text-rose-500 bg-rose-50 dark:bg-rose-950/60' },
   };
 
@@ -140,32 +142,16 @@ export const Header: React.FC<HeaderProps> = ({
           </div>
         </div>
 
-        {/* Center: Demo Persona Switcher Bar */}
-        <div className="relative hidden md:flex items-center" ref={roleMenuRef}>
-          <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800/80 p-1 rounded-xl border border-slate-200 dark:border-slate-700">
-            <span className="text-xs font-medium text-slate-500 dark:text-slate-400 px-2 flex items-center gap-1">
-              Role:
+        {/* Center: Institutional Authenticated Role Badge */}
+        <div className="hidden md:flex items-center">
+          <div className="flex items-center gap-2 bg-slate-100 dark:bg-slate-800/80 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700">
+            <span className="flex h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+            <span className="text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+              <span>Portal:</span>
+              <span className="px-2 py-0.5 rounded-md bg-white dark:bg-slate-700 text-blue-700 dark:text-blue-300 font-bold uppercase text-[10px] tracking-wider shadow-xs">
+                {role}
+              </span>
             </span>
-            {(['student', 'faculty', 'staff', 'department_head', 'admin'] as UserRole[]).map((r) => {
-              const active = role === r;
-              return (
-                <button
-                  key={r}
-                  onClick={() => {
-                    switchDemoRole(r);
-                    showToast('info', `Switched Persona to ${roleMeta[r].label}`, `Viewing system from ${r} perspective.`);
-                  }}
-                  className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium transition-all ${
-                    active
-                      ? 'bg-white dark:bg-slate-700 text-blue-700 dark:text-blue-300 shadow-sm font-semibold'
-                      : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-slate-700/50'
-                  }`}
-                >
-                  {roleMeta[r].icon}
-                  <span className="capitalize">{r === 'department_head' ? 'HOD' : r}</span>
-                </button>
-              );
-            })}
           </div>
         </div>
 
@@ -341,7 +327,7 @@ export const Header: React.FC<HeaderProps> = ({
                     onClick={() => {
                       logout();
                       setShowUserMenu(false);
-                      onNavigate('landing');
+                      onNavigate('login');
                     }}
                     className="w-full flex items-center gap-2.5 px-4 py-2 text-xs text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30"
                   >

@@ -1,68 +1,265 @@
 import React from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
-import { DataService } from '../../services/dataService';
 import {
   LayoutDashboard,
+  PlusCircle,
   FileText,
-  MapPin,
-  BookOpen,
+  Bell,
+  Star,
+  User,
+  LogOut,
   Wrench,
   CalendarCheck,
-  Package,
-  TrendingUp,
-  AlertOctagon,
+  Building2,
   Users,
-  ShieldCheck,
+  TrendingUp,
   Download,
-  Play,
-  Layers,
-  Sparkles,
-  Info,
+  ShieldCheck,
+  MapPin,
+  BookOpen,
 } from 'lucide-react';
 
 interface SidebarProps {
   currentPage: string;
   onNavigate: (page: string) => void;
+  onOpenCreateComplaint?: () => void;
   isOpen: boolean;
   onClose: () => void;
 }
 
-export const Sidebar: React.FC<SidebarProps> = ({ currentPage, onNavigate, isOpen, onClose }) => {
-  const { role, isDemoMode } = useAuth();
+export const Sidebar: React.FC<SidebarProps> = ({
+  currentPage,
+  onNavigate,
+  onOpenCreateComplaint,
+  isOpen,
+  onClose,
+}) => {
+  const { role, currentUser, logout } = useAuth();
   const { showToast } = useToast();
 
-  const handleRunSlaCheck = async () => {
-    const result = await DataService.checkOverdueComplaints();
-    showToast(
-      'info',
-      'SLA Engine Simulation Complete',
-      `Identified ${result.overdueCount} overdue complaints; auto-escalated ${result.escalatedCount} tickets.`
-    );
-    window.dispatchEvent(new CustomEvent('sc360_data_updated'));
+  const handleLogout = () => {
+    logout();
+    onNavigate('login');
+    showToast('info', 'Signed Out', 'You have been signed out safely.');
   };
 
-  const navItems = [
-    { id: 'dashboard', label: 'Dashboard', icon: <LayoutDashboard className="w-4 h-4" />, roles: ['student', 'faculty', 'staff', 'department_head', 'admin'] },
-    { id: 'complaint-directory', label: 'Complaint Directory', icon: <FileText className="w-4 h-4" />, roles: ['student', 'faculty', 'staff', 'department_head', 'admin'] },
-    { id: 'campus-map', label: 'Interactive Campus Map', icon: <MapPin className="w-4 h-4" />, roles: ['student', 'faculty', 'staff', 'department_head', 'admin'] },
-    { id: 'knowledge-base', label: 'Knowledge Base & FAQ', icon: <BookOpen className="w-4 h-4" />, roles: ['student', 'faculty', 'staff', 'department_head', 'admin'] },
-    
-    // Maintenance Staff & HOD & Admin
-    { id: 'maintenance-planner', label: 'Preventive Maintenance', icon: <CalendarCheck className="w-4 h-4" />, roles: ['staff', 'department_head', 'admin'] },
-    { id: 'assets', label: 'Campus Asset Registry', icon: <Package className="w-4 h-4" />, roles: ['staff', 'department_head', 'admin'] },
-    
-    // HOD & Admin
-    { id: 'recurring-issues', label: 'Recurring Issue Detector', icon: <AlertOctagon className="w-4 h-4" />, roles: ['department_head', 'admin'] },
-    { id: 'analytics', label: 'Analytics & Trends', icon: <TrendingUp className="w-4 h-4" />, roles: ['department_head', 'admin'] },
-    { id: 'reports', label: 'Export Reports & CSV', icon: <Download className="w-4 h-4" />, roles: ['department_head', 'admin'] },
+  /**
+   * SECTION 7: ROLE-SPECIFIC SIDEBARS
+   * Build menus strictly according to the authenticated user's role.
+   */
+  const getNavItems = () => {
+    switch (role) {
+      case 'student':
+        return [
+          {
+            id: 'dashboard',
+            label: 'Dashboard',
+            icon: <LayoutDashboard className="w-4 h-4" />,
+            action: () => onNavigate('dashboard'),
+          },
+          {
+            id: 'submit-complaint',
+            label: 'Submit Complaint',
+            icon: <PlusCircle className="w-4 h-4 text-teal-400" />,
+            action: () => {
+              if (onOpenCreateComplaint) onOpenCreateComplaint();
+            },
+          },
+          {
+            id: 'my-complaints',
+            label: 'My Complaints',
+            icon: <FileText className="w-4 h-4" />,
+            action: () => onNavigate('complaint-directory'),
+          },
+          {
+            id: 'campus-map',
+            label: 'Campus Map',
+            icon: <MapPin className="w-4 h-4" />,
+            action: () => onNavigate('campus-map'),
+          },
+          {
+            id: 'knowledge-base',
+            label: 'Self-Help Guides',
+            icon: <BookOpen className="w-4 h-4" />,
+            action: () => onNavigate('knowledge-base'),
+          },
+          {
+            id: 'profile',
+            label: 'Profile',
+            icon: <User className="w-4 h-4" />,
+            action: () => onNavigate('profile'),
+          },
+        ];
 
-    // Admin Only
-    { id: 'admin-management', label: 'Departments & Users', icon: <Users className="w-4 h-4" />, roles: ['admin'] },
-    { id: 'audit-logs', label: 'System Audit Logs', icon: <ShieldCheck className="w-4 h-4" />, roles: ['admin'] },
-  ];
+      case 'professor':
+      case 'faculty':
+        return [
+          {
+            id: 'dashboard',
+            label: 'Dashboard',
+            icon: <LayoutDashboard className="w-4 h-4" />,
+            action: () => onNavigate('dashboard'),
+          },
+          {
+            id: 'submit-complaint',
+            label: 'Submit Complaint',
+            icon: <PlusCircle className="w-4 h-4 text-indigo-400" />,
+            action: () => {
+              if (onOpenCreateComplaint) onOpenCreateComplaint();
+            },
+          },
+          {
+            id: 'my-complaints',
+            label: 'My Complaints',
+            icon: <FileText className="w-4 h-4" />,
+            action: () => onNavigate('complaint-directory'),
+          },
+          {
+            id: 'campus-map',
+            label: 'Campus Map',
+            icon: <MapPin className="w-4 h-4" />,
+            action: () => onNavigate('campus-map'),
+          },
+          {
+            id: 'knowledge-base',
+            label: 'Knowledge Base',
+            icon: <BookOpen className="w-4 h-4" />,
+            action: () => onNavigate('knowledge-base'),
+          },
+          {
+            id: 'profile',
+            label: 'Profile',
+            icon: <User className="w-4 h-4" />,
+            action: () => onNavigate('profile'),
+          },
+        ];
 
-  const visibleNav = navItems.filter((item) => item.roles.includes(role));
+      case 'staff':
+        return [
+          {
+            id: 'dashboard',
+            label: 'Dashboard',
+            icon: <LayoutDashboard className="w-4 h-4" />,
+            action: () => onNavigate('dashboard'),
+          },
+          {
+            id: 'assigned-complaints',
+            label: 'Assigned Complaints',
+            icon: <FileText className="w-4 h-4" />,
+            action: () => onNavigate('complaint-directory'),
+          },
+          {
+            id: 'maintenance-tasks',
+            label: 'Maintenance Tasks',
+            icon: <CalendarCheck className="w-4 h-4" />,
+            action: () => onNavigate('maintenance-planner'),
+          },
+          {
+            id: 'campus-map',
+            label: 'Campus Map',
+            icon: <MapPin className="w-4 h-4" />,
+            action: () => onNavigate('campus-map'),
+          },
+          {
+            id: 'profile',
+            label: 'Profile',
+            icon: <User className="w-4 h-4" />,
+            action: () => onNavigate('profile'),
+          },
+        ];
+
+      case 'hod':
+      case 'department_head':
+        return [
+          {
+            id: 'dashboard',
+            label: 'Dashboard',
+            icon: <LayoutDashboard className="w-4 h-4" />,
+            action: () => onNavigate('dashboard'),
+          },
+          {
+            id: 'department-complaints',
+            label: 'Department Complaints',
+            icon: <FileText className="w-4 h-4" />,
+            action: () => onNavigate('complaint-directory'),
+          },
+          {
+            id: 'analytics',
+            label: 'Analytics',
+            icon: <TrendingUp className="w-4 h-4" />,
+            action: () => onNavigate('analytics'),
+          },
+          {
+            id: 'reports',
+            label: 'Reports & CSV',
+            icon: <Download className="w-4 h-4" />,
+            action: () => onNavigate('reports'),
+          },
+          {
+            id: 'campus-map',
+            label: 'Campus Map',
+            icon: <MapPin className="w-4 h-4" />,
+            action: () => onNavigate('campus-map'),
+          },
+          {
+            id: 'profile',
+            label: 'Profile',
+            icon: <User className="w-4 h-4" />,
+            action: () => onNavigate('profile'),
+          },
+        ];
+
+      case 'admin':
+      default:
+        return [
+          {
+            id: 'dashboard',
+            label: 'Dashboard',
+            icon: <LayoutDashboard className="w-4 h-4" />,
+            action: () => onNavigate('dashboard'),
+          },
+          {
+            id: 'complaint-directory',
+            label: 'All Complaints',
+            icon: <FileText className="w-4 h-4" />,
+            action: () => onNavigate('complaint-directory'),
+          },
+          {
+            id: 'admin-management',
+            label: 'Departments & Users',
+            icon: <Users className="w-4 h-4" />,
+            action: () => onNavigate('admin-management'),
+          },
+          {
+            id: 'analytics',
+            label: 'Analytics & SLA',
+            icon: <TrendingUp className="w-4 h-4" />,
+            action: () => onNavigate('analytics'),
+          },
+          {
+            id: 'reports',
+            label: 'Export Reports',
+            icon: <Download className="w-4 h-4" />,
+            action: () => onNavigate('reports'),
+          },
+          {
+            id: 'audit-logs',
+            label: 'System Audit Logs',
+            icon: <ShieldCheck className="w-4 h-4" />,
+            action: () => onNavigate('audit-logs'),
+          },
+          {
+            id: 'profile',
+            label: 'Profile',
+            icon: <User className="w-4 h-4" />,
+            action: () => onNavigate('profile'),
+          },
+        ];
+    }
+  };
+
+  const navItems = getNavItems();
 
   return (
     <>
@@ -80,22 +277,49 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentPage, onNavigate, isOpe
         } flex flex-col justify-between overflow-y-auto`}
       >
         <div className="p-4 space-y-6">
-          {/* Main Navigation */}
+          {/* User Role Card */}
+          <div className="p-3 rounded-2xl bg-white dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700/60 shadow-sm">
+            <div className="flex items-center gap-2.5">
+              {currentUser?.avatarUrl ? (
+                <img
+                  src={currentUser.avatarUrl}
+                  alt={currentUser.fullName}
+                  className="w-9 h-9 rounded-xl object-cover border border-slate-300 dark:border-slate-600"
+                />
+              ) : (
+                <div className="w-9 h-9 rounded-xl bg-blue-600 text-white font-bold text-xs flex items-center justify-center">
+                  {currentUser?.fullName?.charAt(0) || 'U'}
+                </div>
+              )}
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-bold text-slate-900 dark:text-white truncate">
+                  {currentUser?.fullName}
+                </p>
+                <div className="flex items-center gap-1 mt-0.5">
+                  <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.2 rounded-full bg-blue-500/10 text-blue-600 dark:text-blue-400">
+                    {role}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Role-Specific Navigation Menu */}
           <div>
             <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-2 px-3">
-              Navigation
+              {role.toUpperCase()} Menu
             </p>
             <nav className="space-y-1">
-              {visibleNav.map((item) => {
+              {navItems.map((item) => {
                 const active = currentPage === item.id;
                 return (
                   <button
                     key={item.id}
                     onClick={() => {
-                      onNavigate(item.id);
+                      item.action();
                       onClose();
                     }}
-                    className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all ${
+                    className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
                       active
                         ? 'bg-blue-600 text-white shadow-sm shadow-blue-500/30 font-bold'
                         : 'text-slate-600 dark:text-slate-300 hover:bg-slate-200/60 dark:hover:bg-slate-800'
@@ -108,44 +332,17 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentPage, onNavigate, isOpe
               })}
             </nav>
           </div>
-
-          {/* Quick Simulation Actions */}
-          <div>
-            <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-2 px-3">
-              Automation & Tools
-            </p>
-            <div className="space-y-2 px-1">
-              <button
-                onClick={handleRunSlaCheck}
-                className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-800/60 hover:bg-amber-100 transition-colors"
-              >
-                <div className="flex items-center gap-2">
-                  <Play className="w-3.5 h-3.5 text-amber-600 fill-amber-600" />
-                  <span>Evaluate SLA Escalations</span>
-                </div>
-                <span className="text-[10px] bg-amber-200/70 dark:bg-amber-900 px-1.5 py-0.5 rounded font-mono font-bold">
-                  TEST
-                </span>
-              </button>
-            </div>
-          </div>
         </div>
 
-        {/* Bottom Banner */}
+        {/* Bottom Logout Button */}
         <div className="p-4 border-t border-slate-200 dark:border-slate-800">
-          <div className="p-3 rounded-xl bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-slate-800/80 dark:to-slate-800/40 border border-blue-100 dark:border-slate-700">
-            <div className="flex items-center gap-2 mb-1">
-              <Sparkles className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-              <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
-                {isDemoMode ? 'Local Demo Mode' : 'Connected to Supabase'}
-              </span>
-            </div>
-            <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-snug">
-              {isDemoMode
-                ? 'Persistent via localStorage. Full role simulation with pre-populated college data.'
-                : 'Live PostgreSQL & Realtime active.'}
-            </p>
-          </div>
+          <button
+            onClick={handleLogout}
+            className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs font-semibold text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors cursor-pointer"
+          >
+            <LogOut className="w-4 h-4" />
+            <span>Sign Out</span>
+          </button>
         </div>
       </aside>
     </>

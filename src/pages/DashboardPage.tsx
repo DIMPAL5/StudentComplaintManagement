@@ -87,9 +87,9 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
             </h1>
             <p className="text-xs sm:text-sm text-blue-200 max-w-xl">
               {role === 'student' && 'Track your reported complaints, monitor real-time repair status, and review campus resolutions.'}
-              {role === 'faculty' && 'Manage classroom AV, laboratory apparatus, and department facility incident tickets.'}
+              {(role === 'faculty' || role === 'professor') && 'Manage classroom AV, laboratory apparatus, and department facility incident tickets.'}
               {role === 'staff' && 'Review your assigned work orders, update task progress, and upload resolution proof.'}
-              {role === 'department_head' && 'Oversee department staff workload, review high-priority escalations, and monitor SLA deadlines.'}
+              {(role === 'department_head' || role === 'hod') && 'Oversee department staff workload, review high-priority escalations, and monitor SLA deadlines.'}
               {role === 'admin' && 'Central command for institutional maintenance, asset tracking, recurring issues, and SLA enforcement.'}
             </p>
           </div>
@@ -142,8 +142,8 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
         </div>
       )}
 
-      {/* ROLE 1 & 2: STUDENT / FACULTY DASHBOARD */}
-      {(role === 'student' || role === 'faculty') && (
+      {/* ROLE 1 & 2: STUDENT / PROFESSOR DASHBOARD */}
+      {(role === 'student' || role === 'faculty' || role === 'professor') && (
         <div className="space-y-6">
           {/* Quick Stats */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5">
@@ -297,7 +297,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
       )}
 
       {/* ROLE 4: DEPARTMENT HEAD (HOD) DASHBOARD */}
-      {role === 'department_head' && (
+      {(role === 'department_head' || role === 'hod') && (
         <div className="space-y-6">
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5">
             <div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm">

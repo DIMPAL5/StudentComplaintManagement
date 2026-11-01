@@ -1,10 +1,13 @@
-export type UserRole = 'student' | 'faculty' | 'staff' | 'department_head' | 'admin';
+export type UserRole = 'student' | 'professor' | 'staff' | 'hod' | 'admin' | 'faculty' | 'department_head';
+
+export type AccountStatus = 'pending' | 'approved' | 'suspended';
 
 export interface UserProfile {
   id: string;
   email: string;
   fullName: string;
   role: UserRole;
+  accountStatus: AccountStatus;
   password?: string;
   departmentId?: string;
   departmentName?: string;
@@ -13,6 +16,7 @@ export interface UserProfile {
   avatarUrl?: string;
   bio?: string;
   createdAt: string;
+  updatedAt?: string;
 }
 
 export interface Department {

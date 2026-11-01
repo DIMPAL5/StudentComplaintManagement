@@ -99,7 +99,24 @@ export class DataService {
       const { data } = await supabase.from('profiles').select('*');
       if (data && data.length > 0) return data;
     }
-    return loadStored<UserProfile[]>(STORAGE_KEYS.USERS, INITIAL_PROFILES);
+    const stored = loadStored<UserProfile[]>(STORAGE_KEYS.USERS, INITIAL_PROFILES);
+    let updated = false;
+    for (const seed of INITIAL_PROFILES) {
+      const idx = stored.findIndex((u) => u.email.toLowerCase() === seed.email.toLowerCase());
+      if (idx === -1) {
+        stored.push(seed);
+        updated = true;
+      } else {
+        if (!stored[idx].accountStatus || stored[idx].password !== seed.password || stored[idx].role !== seed.role) {
+          stored[idx] = { ...stored[idx], ...seed };
+          updated = true;
+        }
+      }
+    }
+    if (updated) {
+      saveStored(STORAGE_KEYS.USERS, stored);
+    }
+    return stored;
   }
 
   public static async saveUser(user: UserProfile, actor?: UserProfile): Promise<UserProfile> {

@@ -11,10 +11,12 @@ CREATE TABLE IF NOT EXISTS public.profiles (
     id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
     email TEXT UNIQUE NOT NULL,
     full_name TEXT NOT NULL,
-    role TEXT NOT NULL CHECK (role IN ('student', 'faculty', 'staff', 'department_head', 'admin')),
+    role TEXT NOT NULL CHECK (role IN ('student', 'professor', 'staff', 'hod', 'faculty', 'department_head', 'admin')),
+    account_status TEXT NOT NULL DEFAULT 'approved' CHECK (account_status IN ('pending', 'approved', 'suspended')),
     department_id UUID,
     phone TEXT,
     roll_or_emp_id TEXT,
+    employee_or_student_id TEXT,
     avatar_url TEXT,
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()
