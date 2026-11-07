@@ -35,18 +35,16 @@ export const Header: React.FC<HeaderProps> = ({
   onNavigate,
   onOpenAuthModal,
 }) => {
-  const { currentUser, role, isDemoMode, switchDemoRole, logout } = useAuth();
+  const { currentUser, role, isDemoMode, logout } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const { showToast } = useToast();
 
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [showNotifications, setShowNotifications] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
-  const [showRoleSwitcher, setShowRoleSwitcher] = useState(false);
 
   const notifRef = useRef<HTMLDivElement>(null);
   const userMenuRef = useRef<HTMLDivElement>(null);
-  const roleMenuRef = useRef<HTMLDivElement>(null);
 
   const fetchNotifications = async () => {
     if (currentUser) {
@@ -69,9 +67,6 @@ export const Header: React.FC<HeaderProps> = ({
       }
       if (userMenuRef.current && !userMenuRef.current.contains(e.target as Node)) {
         setShowUserMenu(false);
-      }
-      if (roleMenuRef.current && !roleMenuRef.current.contains(e.target as Node)) {
-        setShowRoleSwitcher(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
@@ -339,24 +334,6 @@ export const Header: React.FC<HeaderProps> = ({
             )}
           </div>
         </div>
-      </div>
-
-      {/* Mobile Demo Switcher Bar */}
-      <div className="md:hidden flex items-center justify-between px-4 py-2 bg-slate-50 dark:bg-slate-800/50 border-t border-slate-200 dark:border-slate-800 overflow-x-auto gap-2">
-        <span className="text-[11px] font-semibold text-slate-500 whitespace-nowrap">Switch Persona:</span>
-        {(['student', 'faculty', 'staff', 'department_head', 'admin'] as UserRole[]).map((r) => (
-          <button
-            key={r}
-            onClick={() => switchDemoRole(r)}
-            className={`px-2 py-0.5 rounded text-[10px] font-medium whitespace-nowrap capitalize ${
-              role === r
-                ? 'bg-blue-600 text-white font-bold'
-                : 'bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-300'
-            }`}
-          >
-            {r === 'department_head' ? 'HOD' : r}
-          </button>
-        ))}
       </div>
     </header>
   );
