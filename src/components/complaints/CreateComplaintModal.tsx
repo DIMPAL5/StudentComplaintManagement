@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import { DataService } from '../../services/dataService';
+import { classifyComplaint, findSimilarComplaints, isAiEnabled, type AiClassification } from '../../services/aiService';
 import { ComplaintCategory, Department, Asset, CampusBuilding, Priority, Complaint } from '../../types';
 import {
   X,
@@ -20,6 +21,7 @@ import {
   QrCode,
   Mic,
   MicOff,
+  Loader2,
 } from 'lucide-react';
 import { CameraModal } from '../common/CameraModal';
 
@@ -62,6 +64,11 @@ export const CreateComplaintModal: React.FC<CreateComplaintModalProps> = ({ isOp
   const [recommendedPriority, setRecommendedPriority] = useState<Priority>('medium');
   const [isSafetyAlert, setIsSafetyAlert] = useState(false);
 
+  // AI (Gemini) Triage & Semantic Duplicates
+  const [aiResult, setAiResult] = useState<AiClassification | null>(null);
+  const [isAiLoading, setIsAiLoading] = useState(false);
+  const [aiDuplicates, setAiDuplicates] = useState<{ complaint: Complaint; score: number }[]>([]);
+
   // Guided Assistant Wizard State
   const [showWizard, setShowWizard] = useState(false);
   const [wizardStep, setWizardStep] = useState(1);
@@ -92,6 +99,8 @@ export const CreateComplaintModal: React.FC<CreateComplaintModalProps> = ({ isOp
       }
     };
     if (isOpen) {
+      setAiResult(null);
+      setAiDuplicates([]);
       loadMetadata();
     }
   }, [isOpen]);
@@ -123,6 +132,35 @@ export const CreateComplaintModal: React.FC<CreateComplaintModalProps> = ({ isOp
     return () => clearTimeout(timer);
   }, [title, campusBuilding, roomNumber, categoryId]);
 
+  // AI suggestion becomes outdated when the text changes
+  useEffect(() => {
+    setAiResult(null);
+  }, [title, description]);
+
+  // AI semantic duplicate detection (catches same issue written in different words)
+  useEffect(() => {
+    if (!isOpen || !isAiEnabled()) return;
+    const text = `${title}. ${description}`.trim();
+    if (text.length < 15) {
+      setAiDuplicates([]);
+      return;
+    }
+    const timer = setTimeout(async () => {
+      try {
+        const all = await DataService.getComplaints();
+        const open = all.filter(
+          (c) => !['resolved', 'closed', 'rejected'].includes(String(c.status).toLowerCase())
+        );
+        const matches = await findSimilarComplaints(text, open, (c) => `${c.title}. ${c.description}`, 0.88);
+        // don't repeat tickets the rule-based detector already shows
+        setAiDuplicates(matches.filter((m) => !duplicateMatches.some((d) => d.id === m.complaint.id)));
+      } catch (err) {
+        console.warn('[AI] semantic duplicate check failed:', err);
+      }
+    }, 1000);
+    return () => clearTimeout(timer);
+  }, [isOpen, title, description, duplicateMatches]);
+
   if (!isOpen) return null;
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -139,6 +177,37 @@ export const CreateComplaintModal: React.FC<CreateComplaintModalProps> = ({ isOp
       setImagePreview(reader.result as string);
     };
     reader.readAsDataURL(file);
+  };
+
+  // AI Triage: classify complaint text with Gemini
+  const handleAiSuggest = async () => {
+    if (!isAiEnabled()) {
+      showToast('warning', 'AI not configured', 'Add VITE_GEMINI_API_KEY to your .env file and restart npm run dev.');
+      return;
+    }
+    if (!title.trim() && !description.trim()) {
+      showToast('warning', 'Describe the issue first', 'Type a title or description so the AI has something to analyse.');
+      return;
+    }
+
+    setIsAiLoading(true);
+    const result = await classifyComplaint(
+      title,
+      description,
+      categories.map((c) => c.name),
+      departments.map((d) => d.name)
+    );
+    setIsAiLoading(false);
+
+    if (!result) {
+      showToast('error', 'AI suggestion failed', 'Check the browser console (F12) for details.');
+      return;
+    }
+
+    const matchedCategory = categories.find((c) => c.name === result.category);
+    if (matchedCategory) setCategoryId(matchedCategory.id);
+    setAiResult(result);
+    showToast('success', 'AI suggestion applied', `${result.category} · ${result.priority} priority`);
   };
 
   // Voice Dictation
@@ -257,6 +326,10 @@ export const CreateComplaintModal: React.FC<CreateComplaintModalProps> = ({ isOp
       (!campusBuilding || a.building.toLowerCase().includes(campusBuilding.toLowerCase())) &&
       (!selectedCategoryObj || a.category.toLowerCase().includes(selectedCategoryObj.name.toLowerCase().slice(0, 5)))
   );
+
+  const aiConfidencePct = aiResult
+    ? Math.round(aiResult.confidence > 1 ? aiResult.confidence : aiResult.confidence * 100)
+    : 0;
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-3 sm:p-6 animate-in fade-in">
@@ -426,12 +499,55 @@ export const CreateComplaintModal: React.FC<CreateComplaintModalProps> = ({ isOp
             </div>
           )}
 
+          {/* AI Semantic Duplicate Banner */}
+          {aiDuplicates.length > 0 && (
+            <div className="p-4 rounded-xl bg-violet-50 dark:bg-violet-950/30 border border-violet-300 dark:border-violet-800 space-y-2">
+              <div className="flex items-center gap-2 text-violet-800 dark:text-violet-200">
+                <Sparkles className="w-4 h-4 shrink-0 text-violet-600" />
+                <span className="text-xs font-bold">
+                  AI found {aiDuplicates.length} similar open complaint{aiDuplicates.length > 1 ? 's' : ''}
+                </span>
+              </div>
+              <p className="text-[11px] text-violet-700 dark:text-violet-300">
+                These describe the same kind of problem in different words. Check them before submitting a new ticket.
+              </p>
+              <div className="space-y-1">
+                {aiDuplicates.map(({ complaint, score }) => (
+                  <div
+                    key={complaint.id}
+                    className="p-2 bg-white dark:bg-slate-800 rounded-lg text-xs flex items-center justify-between border border-violet-200 dark:border-slate-700"
+                  >
+                    <div>
+                      <span className="font-mono font-bold text-blue-600 mr-2">{complaint.complaintCode}</span>
+                      <span className="font-medium text-slate-800 dark:text-slate-200">{complaint.title}</span>
+                    </div>
+                    <span className="text-[10px] px-2 py-0.5 rounded bg-violet-100 text-violet-800 font-bold whitespace-nowrap">
+                      {Math.round(score * 100)}% match
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           <form id="createComplaintForm" onSubmit={handleSubmit} className="space-y-4">
             {/* Title */}
             <div>
-              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                Complaint Title <span className="text-rose-500">*</span>
-              </label>
+              <div className="flex items-center justify-between mb-1">
+                <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                  Complaint Title <span className="text-rose-500">*</span>
+                </label>
+                <button
+                  type="button"
+                  onClick={handleAiSuggest}
+                  disabled={isAiLoading}
+                  className="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-lg text-violet-600 dark:text-violet-400 hover:bg-violet-50 dark:hover:bg-violet-950/40 disabled:opacity-60 transition-colors"
+                  title="Let AI pick the category and priority from your text"
+                >
+                  {isAiLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
+                  <span>{isAiLoading ? 'Analysing...' : 'AI Suggest'}</span>
+                </button>
+              </div>
               <input
                 type="text"
                 value={title}
@@ -473,6 +589,46 @@ export const CreateComplaintModal: React.FC<CreateComplaintModalProps> = ({ isOp
                 />
               </div>
             </div>
+
+            {/* AI Triage Result */}
+            {aiResult && (
+              <div className="p-3 rounded-xl bg-violet-50 dark:bg-violet-950/30 border border-violet-200 dark:border-violet-900/60 space-y-1.5 text-xs">
+                <div className="flex items-center justify-between">
+                  <span className="flex items-center gap-1.5 font-bold text-violet-900 dark:text-violet-200">
+                    <Sparkles className="w-3.5 h-3.5 text-violet-600" />
+                    AI Triage Suggestion
+                  </span>
+                  <span className="text-[10px] font-semibold text-violet-600 dark:text-violet-400">
+                    {aiConfidencePct}% confident
+                  </span>
+                </div>
+                <div className="flex flex-wrap gap-1.5">
+                  <span className="px-2 py-0.5 rounded-full bg-white dark:bg-slate-800 border border-violet-200 dark:border-violet-800 text-[11px] font-semibold text-slate-700 dark:text-slate-200">
+                    {aiResult.category}
+                  </span>
+                  <span className="px-2 py-0.5 rounded-full bg-white dark:bg-slate-800 border border-violet-200 dark:border-violet-800 text-[11px] font-semibold text-slate-700 dark:text-slate-200">
+                    {aiResult.department}
+                  </span>
+                  <span
+                    className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${
+                      aiResult.priority === 'Critical'
+                        ? 'bg-rose-100 text-rose-800 border border-rose-300'
+                        : aiResult.priority === 'High'
+                        ? 'bg-amber-100 text-amber-800 border border-amber-300'
+                        : 'bg-blue-100 text-blue-800 border border-blue-300'
+                    }`}
+                  >
+                    {aiResult.priority}
+                  </span>
+                  {aiResult.isSafetyHazard && (
+                    <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-rose-100 text-rose-700 text-[10px] font-bold">
+                      <ShieldAlert className="w-3 h-3" /> Safety hazard
+                    </span>
+                  )}
+                </div>
+                <p className="text-[11px] text-violet-700 dark:text-violet-300">{aiResult.reason}</p>
+              </div>
+            )}
 
             {/* Location: Building, Block, Floor, Room */}
             <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/60 space-y-3">
