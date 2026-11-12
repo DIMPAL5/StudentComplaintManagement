@@ -3,7 +3,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
 import { useToast } from '../../context/ToastContext';
 import { DataService } from '../../services/dataService';
-import { Notification, UserRole } from '../../types';
+import { Notification } from '../../types';
 import {
   Bell,
   Sun,
@@ -14,12 +14,8 @@ import {
   LogOut,
   Shield,
   User,
-  GraduationCap,
-  Briefcase,
-  Wrench,
   CheckCheck,
   Building2,
-  ExternalLink,
 } from 'lucide-react';
 
 interface HeaderProps {
@@ -91,15 +87,7 @@ export const Header: React.FC<HeaderProps> = ({
     }
   };
 
-  const roleMeta: Record<UserRole, { label: string; icon: React.ReactNode; color: string }> = {
-    student: { label: 'Student', icon: <GraduationCap className="w-4 h-4" />, color: 'text-blue-500 bg-blue-50 dark:bg-blue-950/60' },
-    professor: { label: 'Professor', icon: <Briefcase className="w-4 h-4" />, color: 'text-indigo-500 bg-indigo-50 dark:bg-indigo-950/60' },
-    faculty: { label: 'Professor', icon: <Briefcase className="w-4 h-4" />, color: 'text-indigo-500 bg-indigo-50 dark:bg-indigo-950/60' },
-    staff: { label: 'Maintenance Staff', icon: <Wrench className="w-4 h-4" />, color: 'text-amber-500 bg-amber-50 dark:bg-amber-950/60' },
-    hod: { label: 'Dept Head (HOD)', icon: <Building2 className="w-4 h-4" />, color: 'text-purple-500 bg-purple-50 dark:bg-purple-950/60' },
-    department_head: { label: 'Dept Head (HOD)', icon: <Building2 className="w-4 h-4" />, color: 'text-purple-500 bg-purple-50 dark:bg-purple-950/60' },
-    admin: { label: 'Administrator', icon: <Shield className="w-4 h-4" />, color: 'text-rose-500 bg-rose-50 dark:bg-rose-950/60' },
-  };
+
 
   return (
     <header className="sticky top-0 z-30 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 transition-colors">
@@ -137,18 +125,7 @@ export const Header: React.FC<HeaderProps> = ({
           </div>
         </div>
 
-        {/* Center: Institutional Authenticated Role Badge */}
-        <div className="hidden md:flex items-center">
-          <div className="flex items-center gap-2 bg-slate-100 dark:bg-slate-800/80 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700">
-            <span className="flex h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-            <span className="text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
-              <span>Portal:</span>
-              <span className="px-2 py-0.5 rounded-md bg-white dark:bg-slate-700 text-blue-700 dark:text-blue-300 font-bold uppercase text-[10px] tracking-wider shadow-xs">
-                {role}
-              </span>
-            </span>
-          </div>
-        </div>
+
 
         {/* Right Actions */}
         <div className="flex items-center gap-2 sm:gap-3">
